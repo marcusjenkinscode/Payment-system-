@@ -1,3 +1,6 @@
+# Payment-system-
+Simple payment processing REST API built with Node.js/Express, using JSON file storage. Create, retrieve, update, and list payments with pending/completed/failed status. Perfect for learning or prototyping payment flows without a database.
+
 # JSON Payment API
 
 A lightweight, file‑based payment processing API built with Node.js and Express. All payment records are stored in a `payments.json` file, making it ideal for prototyping, learning, or small‑scale projects.
@@ -140,3 +143,5 @@ curl -X PUT http://localhost:3000/payments/{id} \
 ## License
 
 MIT
+   git clone https://github.com/marcusjenkinscode/json-payment-api.git
+   cd json-payment-api
