@@ -1,0 +1,17 @@
+{
+  "name": "json-payment-api",
+  "version": "1.0.0",
+  "description": "Simple payment processing REST API built with Node.js/Express, using JSON file storage.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --test"
+  },
+  "keywords": ["payment", "api", "express", "json"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "uuid": "^9.0.0"
+  }
+}
