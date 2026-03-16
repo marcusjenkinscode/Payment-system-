@@ -1,72 +1,94 @@
-const service = require('../services/paymentService');
+/**
+ * controllers/paymentController.js – Request / response handlers
+ *
+ * Each exported function corresponds to one API endpoint.
+ * Business logic and data persistence are delegated to paymentService.
+ */
 
-const VALID_STATUSES = ['completed', 'failed'];
-const CURRENCY_REGEX = /^[A-Z]{3}$/;
+'use strict';
 
-async function createPayment(req, res) {
-  const { amount, currency, payer, payee } = req.body;
+const paymentService = require('../services/paymentService');
 
-  if (amount === undefined || amount === null) {
-    return res.status(400).json({ error: 'amount is required' });
-  }
-  if (typeof amount !== 'number' || amount <= 0) {
-    return res.status(400).json({ error: 'amount must be a positive number' });
-  }
-  if (!currency || !CURRENCY_REGEX.test(currency)) {
-    return res.status(400).json({ error: 'currency must be a valid 3-letter ISO code (e.g. USD)' });
-  }
-  if (!payer || typeof payer !== 'string' || payer.trim() === '') {
-    return res.status(400).json({ error: 'payer is required' });
-  }
-  if (!payee || typeof payee !== 'string' || payee.trim() === '') {
-    return res.status(400).json({ error: 'payee is required' });
-  }
-
+/**
+ * POST /payments
+ * Create a new payment.
+ *
+ * Expected body: { amount, currency, payer, payee }
+ * Returns 201 with the created payment on success.
+ */
+async function createPayment(req, res, next) {
   try {
-    const payment = await service.createPayment({ amount, currency, payer: payer.trim(), payee: payee.trim() });
-    return res.status(201).json(payment);
+    const { amount, currency, payer, payee } = req.body;
+    const payment = await paymentService.createPayment({ amount, currency, payer, payee });
+    res.status(201).json(payment);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to create payment' });
-  }
-}
-
-async function getPayment(req, res) {
-  try {
-    const payment = await service.getPaymentById(req.params.id);
-    if (!payment) {
-      return res.status(404).json({ error: 'Payment not found' });
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
-    return res.json(payment);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to retrieve payment' });
+    next(err);
   }
 }
 
-async function updatePayment(req, res) {
-  const { status } = req.body;
-
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` });
-  }
-
+/**
+ * GET /payments/:id
+ * Retrieve a single payment by its UUID.
+ *
+ * Returns 200 with the payment on success.
+ * Returns 404 if no payment with the given ID exists.
+ */
+async function getPaymentById(req, res, next) {
   try {
-    const payment = await service.updatePaymentStatus(req.params.id, status);
-    if (!payment) {
-      return res.status(404).json({ error: 'Payment not found' });
+    const payment = await paymentService.getPaymentById(req.params.id);
+    res.json(payment);
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
-    return res.json(payment);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to update payment' });
+    next(err);
   }
 }
 
-async function listPayments(req, res) {
+/**
+ * PATCH /payments/:id
+ * Update the status of an existing payment.
+ *
+ * Expected body: { status } where status is 'completed' or 'failed'.
+ * Returns 200 with the updated payment on success.
+ */
+async function updatePaymentStatus(req, res, next) {
   try {
-    const payments = await service.listPayments();
-    return res.json(payments);
+    const { status } = req.body;
+    if (typeof status !== 'string' || status.trim() === '') {
+      return res.status(400).json({ error: 'status is required in the request body' });
+    }
+    const payment = await paymentService.updatePaymentStatus(req.params.id, status);
+    res.json(payment);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to list payments' });
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    next(err);
   }
 }
 
-module.exports = { createPayment, getPayment, updatePayment, listPayments };
+/**
+ * GET /payments
+ * Return all payment records.
+ *
+ * Returns 200 with an array of payments (may be empty).
+ */
+async function listPayments(req, res, next) {
+  try {
+    const payments = await paymentService.listPayments();
+    res.json(payments);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  createPayment,
+  getPaymentById,
+  updatePaymentStatus,
+  listPayments,
+};
